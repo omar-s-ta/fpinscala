@@ -10,10 +10,10 @@ enum Free[+F[_], A]:
     s: Free[F, A],
     f: A => Free[F, B]) extends Free[F, B]
 
-  def flatMap[F2[x] >: F[x], B](f: A => Free[F2,B]): Free[F2,B] =
+  def flatMap[F2[x] >: F[x], B](f: A => Free[F2, B]): Free[F2, B] =
     FlatMap(this, f)
 
-  def map[B](f: A => B): Free[F,B] =
+  def map[B](f: A => B): Free[F, B] =
     flatMap(a => Return(f(a)))
 
   def union[G[_]]: Free[[x] =>> F[x] | G[x], A] = this
@@ -44,15 +44,15 @@ enum Free[+F[_], A]:
 object Free:
   given freeMonad[F[_]]: Monad[[x] =>> Free[F, x]] with
     def unit[A](a: => A) = Return(a)
-    extension [A](fa: Free[F, A])
-      def flatMap[B](f: A => Free[F, B]) = fa.flatMap(f)
+    extension [A](fa: Free[F, A]) def flatMap[B](f: A => Free[F, B]) = fa.flatMap(f)
 
   extension [A](fa: Free[Function0, A])
     @annotation.tailrec
     def runTrampoline: A = fa match
       case Return(a) => a
       case Suspend(ta) => ta()
-      case FlatMap(fx, f) => fx match
-        case Return(x) => f(x).runTrampoline
-        case Suspend(tx) => f(tx()).runTrampoline
-        case FlatMap(fy, g) => fy.flatMap(y => g(y).flatMap(f)).runTrampoline
+      case FlatMap(fx, f) =>
+        fx match
+          case Return(x) => f(x).runTrampoline
+          case Suspend(tx) => f(tx()).runTrampoline
+          case FlatMap(fy, g) => fy.flatMap(y => g(y).flatMap(f)).runTrampoline

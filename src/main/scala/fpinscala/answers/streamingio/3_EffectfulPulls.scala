@@ -12,9 +12,9 @@ object EffectfulPulls:
     case Output[+O](value: O) extends Pull[Nothing, O, Unit]
     case Eval[+F[_], R](action: F[R]) extends Pull[F, Nothing, R]
     case FlatMap[+F[_], X, +O, +R](
-      source: Pull[F, O, X], f: X => Pull[F, O, R]) extends Pull[F, O, R]
-    case Uncons[+F[_], +O, +R](source: Pull[F, O, R])
-      extends Pull[F, Nothing, Either[R, (O, Pull[F, O, R])]]
+      source: Pull[F, O, X],
+      f: X => Pull[F, O, R]) extends Pull[F, O, R]
+    case Uncons[+F[_], +O, +R](source: Pull[F, O, R]) extends Pull[F, Nothing, Either[R, (O, Pull[F, O, R])]]
 
     def step[F2[x] >: F[x], O2 >: O, R2 >: R](
       using F: Monad[F2]
@@ -25,17 +25,20 @@ object EffectfulPulls:
         case Eval(action) => action.map(Left(_))
         case Uncons(source) =>
           source.step.map(s => Left(s.asInstanceOf[R2]))
-        case FlatMap(source, f) => 
+        case FlatMap(source, f) =>
           source match
             case FlatMap(s2, g) =>
               s2.flatMap(x => g(x).flatMap(y => f(y))).step
-            case other => other.step.flatMap:
-              case Left(r) => f(r).step
-              case Right((hd, tl)) => F.unit(Right((hd, tl.flatMap(f))))
+            case other =>
+              other.step.flatMap:
+                case Left(r) => f(r).step
+                case Right((hd, tl)) => F.unit(Right((hd, tl.flatMap(f))))
 
-    def fold[F2[x] >: F[x], R2 >: R, A](init: A)(f: (A, O) => A)(
-      using F: Monad[F2]
-    ): F2[(R2, A)] = 
+    def fold[F2[x] >: F[x], R2 >: R, A](
+      init: A
+    )(f: (A, O) => A
+    )(using F: Monad[F2]
+    ): F2[(R2, A)] =
       step.flatMap:
         case Left(r) => F.unit((r, init))
         case Right((hd, tl)) => tl.fold(f(init, hd))(f)
@@ -60,9 +63,10 @@ object EffectfulPulls:
 
     def take(n: Int): Pull[F, O, Option[R]] =
       if n <= 0 then Result(None)
-      else uncons.flatMap:
-        case Left(r) => Result(Some(r))
-        case Right((hd, tl)) => Output(hd) >> tl.take(n - 1)
+      else
+        uncons.flatMap:
+          case Left(r) => Result(Some(r))
+          case Right((hd, tl)) => Output(hd) >> tl.take(n - 1)
 
     def takeWhile(f: O => Boolean): Pull[F, O, Pull[F, O, R]] =
       uncons.flatMap:
@@ -124,9 +128,11 @@ object EffectfulPulls:
         case Right((o, r2)) => Output(o) >> unfold(r2)(f)
 
     def unfoldEval[F[_], O, R](init: R)(f: R => F[Either[R, (O, R)]]): Pull[F, O, R] =
-      Pull.Eval(f(init)).flatMap:
-        case Left(r) => Result(r)
-        case Right((o, r2)) => Output(o) >> unfoldEval(r2)(f)
+      Pull
+        .Eval(f(init))
+        .flatMap:
+          case Left(r) => Result(r)
+          case Right((o, r2)) => Output(o) >> unfoldEval(r2)(f)
 
     extension [F[_], R](self: Pull[F, Int, R])
       def slidingMean(n: Int): Pull[F, Double, R] =
@@ -152,8 +158,7 @@ object EffectfulPulls:
           case Right((hd, tl)) =>
             f(hd) >> tl.flatMapOutput(f)
 
-    extension [F[_], O](self: Pull[F, O, Unit])
-      def toStream: Stream[F, O] = self
+    extension [F[_], O](self: Pull[F, O, Unit]) def toStream: Stream[F, O] = self
 
   end Pull
 
@@ -187,14 +192,16 @@ object EffectfulPulls:
       Pull.Eval(fo).flatMap(Pull.Output(_))
 
     def unfoldEval[F[_], O, R](init: R)(f: R => F[Option[(O, R)]]): Stream[F, O] =
-      Pull.Eval(f(init)).flatMap:
-        case None => Stream.empty
-        case Some((o, r)) => Pull.Output(o) ++ unfoldEval(r)(f)
+      Pull
+        .Eval(f(init))
+        .flatMap:
+          case None => Stream.empty
+          case Some((o, r)) => Pull.Output(o) ++ unfoldEval(r)(f)
 
     extension [F[_], O](self: Stream[F, O])
       def toPull: Pull[F, O, Unit] = self
 
-      def fold[A](init: A)(f: (A, O) => A)(using Monad[F]): F[A] = 
+      def fold[A](init: A)(f: (A, O) => A)(using Monad[F]): F[A] =
         self.fold(init)(f).map(_(1))
 
       def toList(using Monad[F]): F[List[O]] =
@@ -225,7 +232,7 @@ object EffectfulPulls:
         Stream.flatMap(self)(o => Stream.eval(f(o)))
 
     extension [O](self: Stream[Nothing, O])
-      def fold[A](init: A)(f: (A, O) => A): A = 
+      def fold[A](init: A)(f: (A, O) => A): A =
         self.fold(init)(f)(using Monad.tailrecMonad).result(1)
 
       def toList: List[O] =

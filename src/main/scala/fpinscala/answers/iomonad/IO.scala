@@ -1,7 +1,7 @@
 package fpinscala.answers.iomonad
 
 import fpinscala.answers.parallelism.Nonblocking.Par
-import java.util.concurrent.{Executors, ExecutorService}
+import java.util.concurrent.{ExecutorService, Executors}
 
 // This file contains the final form of IO that's developed throughout the chapter.
 // See DerivingIO.scala for the step by step creation of IO.
@@ -14,7 +14,7 @@ object IO:
   def par[A](pa: Par[A]): IO[A] = Free.Suspend(pa)
 
   // Provides the syntax `IO { ...}` for creating synchronous IO blocks.
-  def apply[A](a: => A): IO[A] = 
+  def apply[A](a: => A): IO[A] =
     par(Par.delay(a))
 
   // Provides the syntax `IO.async { cb => ... }` for creating asynchronous IO blocks.
@@ -24,7 +24,6 @@ object IO:
   def fork[A](a: => IO[A]): IO[A] = par(Par.lazyUnit(())).flatMap(_ => a)
 
   def forkUnit[A](a: => A): IO[A] = fork(now(a))
-
 
   extension [A](ioa: IO[A])
     def unsafeRunSync(pool: ExecutorService): A =

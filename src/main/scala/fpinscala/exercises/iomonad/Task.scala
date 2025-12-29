@@ -41,8 +41,9 @@ object Task:
       case Left(e) => throw e
       case Right(a) => a
 
-    def unsafeAttemptRunSync(es: ExecutorService): Either[Throwable,A] =
-      try IO.unsafeRunSync(self)(es) catch case t: Throwable => Left(t)
+    def unsafeAttemptRunSync(es: ExecutorService): Either[Throwable, A] =
+      try IO.unsafeRunSync(self)(es)
+      catch case t: Throwable => Left(t)
 
   def apply[A](a: => A): Task[A] = IO(catchNonFatal(a))
 
@@ -59,7 +60,8 @@ object Task:
   def forkUnit[A](a: => A): Task[A] = fork(now(a))
 
   private def catchNonFatal[A](a: => A): Either[Throwable, A] =
-    try Right(a) catch case NonFatal(e) => Left(e)
+    try Right(a)
+    catch case NonFatal(e) => Left(e)
 
   given monad: Monad[Task] with
     def unit[A](a: => A) = Task(a)

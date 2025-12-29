@@ -20,7 +20,7 @@ object MyProgram:
     @annotation.tailrec
     def go(n: Int, acc: Int): Int =
       if n <= 0 then acc
-      else go(n-1, n*acc)
+      else go(n - 1, n * acc)
 
     go(n, 1)
 
@@ -84,7 +84,6 @@ object AnonymousFunctions:
 
 object MonomorphicBinarySearch:
 
-
   // First, a findFirst, specialized to `String`.
   // Ideally, we could generalize this to work for any `Array` type.
   def findFirst(ss: Array[String], key: String): Int =
@@ -126,20 +125,20 @@ object PolymorphicFunctions:
   // Polymorphic functions are often so constrained by their type
   // that they only have one implementation! Here's an example:
 
-  def partial1[A,B,C](a: A, f: (A, B) => C): B => C =
+  def partial1[A, B, C](a: A, f: (A, B) => C): B => C =
     (b: B) => f(a, b)
 
   // Exercise 3: Implement `curry`.
 
   // Note that `=>` associates to the right, so we could
   // write the return type as `A => B => C`
-  def curry[A,B,C](f: (A, B) => C): A => (B => C) =
+  def curry[A, B, C](f: (A, B) => C): A => (B => C) =
     ???
 
   // NB: The `Function2` trait has a `curried` method already
 
   // Exercise 4: Implement `uncurry`
-  def uncurry[A,B,C](f: A => B => C): (A, B) => C =
+  def uncurry[A, B, C](f: A => B => C): (A, B) => C =
     ???
 
   /*
@@ -150,10 +149,9 @@ object PolymorphicFunctions:
   and uncurry and the two forms are in some sense "the same". In FP jargon,
   we say that they are _isomorphic_ ("iso" = same; "morphe" = shape, form),
   a term we inherit from category theory.
-  */
+   */
 
   // Exercise 5: Implement `compose`
 
-  def compose[A,B,C](f: B => C, g: A => B): A => C =
+  def compose[A, B, C](f: B => C, g: A => B): A => C =
     ???
-

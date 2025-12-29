@@ -26,7 +26,7 @@ class LazyListSuite extends PropSuite:
     loop()
 
   test("LazyList.headOption")(genLazyList):
-    case Empty      => assert(Empty.headOption.isEmpty)
+    case Empty => assert(Empty.headOption.isEmpty)
     case Cons(h, t) => assert(Cons(h, t).headOption.contains(h()))
 
   test("LazyList.cons")(

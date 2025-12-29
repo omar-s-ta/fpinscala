@@ -38,26 +38,26 @@ class OptionSuite extends PropSuite:
   private val intToOptString: Int => Option[String] = a => Some(a.toString)
   private val strToOptInt: String => Option[Int] =
     _.toIntOption match
-      case SNone        => None
+      case SNone => None
       case SSome(value) => Some(value)
 
   private val otherOpt: Option[Int] = Some(1)
 
   test("Option.map")(genIntOption):
-    case None    => assertEquals(None.map(intToString), None)
+    case None => assertEquals(None.map(intToString), None)
     case Some(n) => assertEquals(Some(n).map(intToString), Some(n.toString))
 
   test("Option.getOrElse")(genIntOption):
-    case None    => assertEquals(None.getOrElse(1), 1)
+    case None => assertEquals(None.getOrElse(1), 1)
     case Some(n) => assertEquals(Some(n).getOrElse(1), n)
 
   test("Option.flatMap")(genIntOption):
-    case None    => assertEquals(None.flatMap(intToOptString), None)
+    case None => assertEquals(None.flatMap(intToOptString), None)
     case Some(n) => assertEquals(Some(n).flatMap(intToOptString), Some(n.toString))
 
   test("Option.orElse")(genIntOption):
     case None => assertEquals(None.orElse(otherOpt), otherOpt)
-    case opt  => assertEquals(opt.orElse(otherOpt), opt)
+    case opt => assertEquals(opt.orElse(otherOpt), opt)
 
   test("Option.filter")(genIntOption):
     case None => assertEquals(None.filter(a => a == 42), None)
@@ -79,7 +79,7 @@ class OptionSuite extends PropSuite:
 
   test("Option.map2")(genIntOption ** genIntOption):
     case (Some(a), Some(b)) => assertEquals(Option.map2(Some(a), Some(b))(_ + _), Some(a + b))
-    case (opt1, opt2)       => assertEquals(Option.map2(opt1, opt2)(_ + _), None)
+    case (opt1, opt2) => assertEquals(Option.map2(opt1, opt2)(_ + _), None)
 
   test("Option.sequence")(genOptionSeq): optionList =>
     val expected: Option[List[Int]] =

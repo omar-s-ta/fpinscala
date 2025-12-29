@@ -8,10 +8,10 @@ import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.state.Candy.*
 import fpinscala.exercises.state.Input.*
 import fpinscala.exercises.state.State.*
-import fpinscala.exercises.state.{ Input, Machine, State }
+import fpinscala.exercises.state.{Input, Machine, State}
 
 class CandySuite extends PropSuite:
-  private val genPosInt: Gen[Int]    = Gen.choose(1, 1000)
+  private val genPosInt: Gen[Int] = Gen.choose(1, 1000)
   private val genNonNegInt: Gen[Int] = Gen.choose(0, 1000)
   private val genInput: Gen[Input] =
     Gen.boolean.map(b => if b then Coin else Turn)
@@ -21,7 +21,7 @@ class CandySuite extends PropSuite:
   private val genNoCandiesMachine: Gen[Machine] =
     for
       locked <- Gen.boolean
-      coins  <- genNonNegInt
+      coins <- genNonNegInt
     yield Machine(locked, 0, coins)
 
   private val genLockedMachine: Gen[Machine] =
@@ -38,9 +38,9 @@ class CandySuite extends PropSuite:
 
   private val genMachine: Gen[Machine] =
     for
-      locked  <- Gen.boolean
+      locked <- Gen.boolean
       candies <- genNonNegInt
-      coins   <- genNonNegInt
+      coins <- genNonNegInt
     yield Machine(locked, candies, coins)
 
   test("Candy: a machine that’s out of candy")(genInputList ** genNoCandiesMachine):
@@ -53,7 +53,7 @@ class CandySuite extends PropSuite:
   test("Candy: inserting a coin into a locked machine")(genLockedMachine): machine =>
     val ((coins, candies), machine1): ((Int, Int), Machine) = simulateMachine(List(Coin)).run(machine)
     assertEquals(candies, machine.candies)
-    assertEquals(coins, machine.coins + 1)                 // One more coin
+    assertEquals(coins, machine.coins + 1) // One more coin
     assertEquals(machine1, Machine(false, candies, coins)) // Unlock a machine
 
   test("Candy: turning the knob on a locked machine")(genLockedMachine): machine =>

@@ -16,7 +16,7 @@ class TreeSuite extends PropSuite:
 
   test("Tree.depth")(genIntTree): tree =>
     tree match
-      case Leaf(_)      => assertEquals(tree.depth, 0)
+      case Leaf(_) => assertEquals(tree.depth, 0)
       case Branch(l, r) => assertEquals(tree.depth, 1 + l.depth.max(r.depth))
     assertEquals(tree.size, toScalaList(tree).length)
 
@@ -31,7 +31,7 @@ class TreeSuite extends PropSuite:
 
   test("Tree.depthViaFold")(genIntTree): tree =>
     tree match
-      case Leaf(_)      => assertEquals(tree.depthViaFold, 0)
+      case Leaf(_) => assertEquals(tree.depthViaFold, 0)
       case Branch(l, r) => assertEquals(tree.depthViaFold, 1 + l.depthViaFold.max(r.depthViaFold))
 
   test("Tree.mapViaFold")(genIntTree): tree =>
@@ -51,7 +51,7 @@ class TreeSuite extends PropSuite:
     assertEquals(tree.maximumViaFold, toScalaList(tree).max.getOrElse(0))
 
   private def toScalaList[A](t: Tree[A]): SList[Option[A]] = t match
-    case Leaf(v)      => SList(Some(v))
+    case Leaf(v) => SList(Some(v))
     case Branch(l, r) => (Option.empty[A] +: toScalaList(l)) ++ toScalaList(r)
 
 object TreeSuite:

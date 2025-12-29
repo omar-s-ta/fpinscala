@@ -70,7 +70,7 @@ class MonoidSuite extends PropSuite:
     assertEquals(monoidLaws(booleanOr, EGen.boolean).check(), Passed)
     assertEquals(monoidLaws(booleanAnd, EGen.boolean).check(), Passed)
     assertEquals(monoidLaws(optionMonoid[Int], genOption).check(), Passed)
-  */
+   */
 
   test("Monoid.combineAll")(genIntList ** genStringList ** genBooleanList):
     case ilist ** slist ** blist =>

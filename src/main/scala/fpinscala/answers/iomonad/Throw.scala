@@ -19,7 +19,7 @@ enum Throw[+A]:
 object Throw:
 
   /* Exception indicating that the central loop should call `f(a)`. */
-  case class Call[A,+B] private[Throw] (a: A, f: A => B) extends Exception:
+  case class Call[A, +B] private[Throw] (a: A, f: A => B) extends Exception:
     override def fillInStackTrace = this
 
   /* Defer evaluation of `f(a)` to the central evaluation loop. */
@@ -58,6 +58,6 @@ object Throw:
           case More(thunk) =>
             try thunk().flatMap(f)
             catch
-              case Call(a0, g) => more:
-                defer(a0)(g.asInstanceOf[Any => Throw[A]].
-                          andThen(_.flatMap(f)))
+              case Call(a0, g) =>
+                more:
+                  defer(a0)(g.asInstanceOf[Any => Throw[A]].andThen(_.flatMap(f)))

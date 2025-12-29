@@ -1,7 +1,7 @@
 package fpinscala.answers.parallelism
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
-import java.util.concurrent.{Callable,ExecutorService}
+import java.util.concurrent.{Callable, ExecutorService}
 import annotation.tailrec
 
 /*
@@ -35,7 +35,7 @@ import annotation.tailrec
  * @param executor Execution strategy
  * @tparam A       The type of messages accepted by this actor.
  */
-final class Actor[A](executor: ExecutorService)(handler: A => Unit, onError: Throwable => Unit = throw(_)):
+final class Actor[A](executor: ExecutorService)(handler: A => Unit, onError: Throwable => Unit = throw (_)):
   self =>
 
   private val tail = new AtomicReference(new Node[A]())
@@ -72,10 +72,8 @@ final class Actor[A](executor: ExecutorService)(handler: A => Unit, onError: Thr
   private def batchHandle(t: Node[A], i: Int): Node[A] =
     val n = t.get
     if n ne null then
-      try
-        handler(n.a)
-      catch
-        case ex: Throwable => onError(ex)
+      try handler(n.a)
+      catch case ex: Throwable => onError(ex)
       if i > 0 then batchHandle(n, i - 1) else n
     else t
 

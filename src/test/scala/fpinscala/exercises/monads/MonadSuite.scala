@@ -8,7 +8,7 @@ import fpinscala.exercises.monads.MonadSuite.*
 import fpinscala.exercises.parallelism.Par
 import fpinscala.exercises.parallelism.Par.Par
 import fpinscala.exercises.parsing.UnitTestParser
-import fpinscala.exercises.parsing.UnitTestParser.{Parser, succeed}
+import fpinscala.exercises.parsing.UnitTestParser.{succeed, Parser}
 import fpinscala.exercises.state.RNG
 import fpinscala.exercises.testing.Gen
 import munit.Assertions
@@ -56,7 +56,7 @@ class MonadSuite extends PropSuite:
       assertFs(listMonad, pure(intList))
 
   // ToDo: Uncomment after fpinscala.exercises.testing.GenSuite passing
-/*
+  /*
   test("Monad.replicateM")(genShortNumber ** genString ** genRNG):
     case n ** s ** rng =>
       val tm = genMonad(rng)
@@ -66,7 +66,7 @@ class MonadSuite extends PropSuite:
       val intList: List[Int] = listMonad.next(rng)._1
       assertEquals(intList.length, n)
       assert(intList.forall(i => 0 <= i && i <= 1000))
-*/
+   */
 
   test("Monad.filterM")(genIntList ** genRNG):
     case intList ** rng =>
@@ -222,9 +222,8 @@ object MonadSuite extends Assertions:
       val monad: Monad[Gen] = Monad.genMonad
       def pure[A]: A => Gen[A] = Gen.unit
       override def assertFs[A](actual: Gen[A], expected: Gen[A]): Unit = ???
-        // ToDo: Uncomment after fpinscala.exercises.testing.GenSuite passing
-        // Assertions.assertEquals(actual.next(rng)._1, expected.next(rng)._1)
-
+      // ToDo: Uncomment after fpinscala.exercises.testing.GenSuite passing
+      // Assertions.assertEquals(actual.next(rng)._1, expected.next(rng)._1)
 
   private val parMonad: TestedMonad[Par[_]] =
     new TestedMonad[Par]:

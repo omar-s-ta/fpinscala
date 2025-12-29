@@ -1,7 +1,7 @@
 package fpinscala.answers.errorhandling
 
 // Hide std library `Option` since we are writing our own in this chapter
-import scala.{Option as _, Some as _, None as _}
+import scala.{None as _, Option as _, Some as _}
 
 enum Option[+A]:
   case Some(get: A)
@@ -11,7 +11,7 @@ enum Option[+A]:
     case None => None
     case Some(a) => Some(f(a))
 
-  def getOrElse[B>:A](default: => B): B = this match
+  def getOrElse[B >: A](default: => B): B = this match
     case None => default
     case Some(a) => a
 
@@ -23,11 +23,11 @@ enum Option[+A]:
     case None => None
     case Some(a) => f(a)
 
-  def orElse[B>:A](ob: => Option[B]): Option[B] =
+  def orElse[B >: A](ob: => Option[B]): Option[B] =
     map(Some(_)).getOrElse(ob)
 
   /* Again, we can implement this with explicit pattern matching. */
-  def orElse_1[B>:A](ob: => Option[B]): Option[B] = this match
+  def orElse_1[B >: A](ob: => Option[B]): Option[B] = this match
     case None => ob
     case _ => this
 
@@ -49,7 +49,7 @@ object Option:
       x + y
     // A `catch` block is just a pattern matching block like the ones we've seen. `case e: Exception` is a pattern
     // that matches any `Exception`, and it binds this value to the identifier `e`. The match returns the value 43.
-    catch  case e: Exception => 43
+    catch case e: Exception => 43
 
   def failingFn2(i: Int): Int =
     try
@@ -67,7 +67,7 @@ object Option:
 
   // a bit later in the chapter we'll learn nicer syntax for
   // writing functions like this
-  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
+  def map2[A, B, C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
     a.flatMap(aa => b.map(bb => f(aa, bb)))
 
   /* Here's an explicit recursive version: */
@@ -80,17 +80,17 @@ object Option:
   It can also be implemented using `foldRight` and `map2`. The type annotation on `foldRight` is needed here; otherwise
   Scala wrongly infers the result type of the fold as `Some[Nil.type]` and reports a type error (try it!). This is an
   unfortunate consequence of Scala using subtyping to encode algebraic data types.
-  */
+   */
   def sequence_1[A](as: List[Option[A]]): Option[List[A]] =
     as.foldRight[Option[List[A]]](Some(Nil))((a, acc) => map2(a, acc)(_ :: _))
 
   def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] =
     a match
       case Nil => Some(Nil)
-      case h::t => map2(f(h), traverse(t)(f))(_ :: _)
+      case h :: t => map2(f(h), traverse(t)(f))(_ :: _)
 
   def traverse_1[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] =
-    a.foldRight[Option[List[B]]](Some(Nil))((h,t) => map2(f(h),t)(_ :: _))
+    a.foldRight[Option[List[B]]](Some(Nil))((h, t) => map2(f(h), t)(_ :: _))
 
   def sequenceViaTraverse[A](a: List[Option[A]]): Option[List[A]] =
     traverse(a)(x => x)

@@ -11,13 +11,13 @@ class StateSuite extends PropSuite:
   // a - the head element, next state - the tail of the list
   private val stateA: State[List[String], Option[String]] =
     State:
-      case Nil          => (None, Nil)
+      case Nil => (None, Nil)
       case head :: tail => (Some(head), tail)
 
   // b - the length of the list, next state - the tail of the list
   private val stateB: State[List[String], Int] =
     State:
-      case Nil          => (0, Nil)
+      case Nil => (0, Nil)
       case head :: tail => (tail.length + 1, tail)
 
   /*
@@ -25,7 +25,7 @@ class StateSuite extends PropSuite:
     val (a, s) = unit[Int, String](str).run(0)
     assertEquals(a, str)
     assertEquals(s, 0)
-  */
+   */
 
   test("State.map")(genStringList): list =>
     val (b, s) = stateA.map(length).run(list)
@@ -55,7 +55,7 @@ class StateSuite extends PropSuite:
     val (first, rest) = list.splitAt(half)
     assertEquals(firstHalfElements, first.map(Some(_)))
     assertEquals(restElements, rest)
-  */
+   */
 
   private def length(maybeHead: Option[String]): Int =
     maybeHead.getOrElse("").length

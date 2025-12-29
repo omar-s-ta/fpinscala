@@ -19,8 +19,8 @@ class GettingStartedSuite extends PropSuite:
     for
       n <- Gen.choose(2, 20)
       list <- Gen.listOfN(n, genShortNumber)
-    yield
-      list.zipWithIndex.map:
+    yield list.zipWithIndex
+      .map:
         case (num, i) =>
           if i % 2 == 0 then num + 100
           else num - 100

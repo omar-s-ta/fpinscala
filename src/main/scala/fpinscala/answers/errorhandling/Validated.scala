@@ -15,8 +15,8 @@ enum Validated[+E, +A]:
       case Invalid(es) => Invalid(es)
 
   def map2[EE >: E, B, C](
-    b: Validated[EE, B])(
-    f: (A, B) => C
+    b: Validated[EE, B]
+  )(f: (A, B) => C
   ): Validated[EE, C] =
     (this, b) match
       case (Valid(aa), Valid(bb)) => Valid(f(aa, bb))
@@ -43,21 +43,21 @@ object MoreGeneralVersionOfValidated:
     case Invalid(error: E)
 
     def toEither: Either[E, A] =
-        this match
+      this match
         case Valid(a) => Either.Right(a)
         case Invalid(e) => Either.Left(e)
 
     def map[B](f: A => B): Validated[E, B] =
-        this match
+      this match
         case Valid(a) => Valid(f(a))
         case Invalid(e) => Invalid(e)
 
     def map2[EE >: E, B, C](
-        b: Validated[EE, B])(
-        f: (A, B) => C)(
-        combineErrors: (EE, EE) => EE
+      b: Validated[EE, B]
+    )(f: (A, B) => C
+    )(combineErrors: (EE, EE) => EE
     ): Validated[EE, C] =
-        (this, b) match
+      (this, b) match
         case (Valid(aa), Valid(bb)) => Valid(f(aa, bb))
         case (Invalid(e), Valid(_)) => Invalid(e)
         case (Valid(_), Invalid(e)) => Invalid(e)

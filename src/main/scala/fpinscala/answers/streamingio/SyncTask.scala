@@ -1,6 +1,6 @@
 package fpinscala.answers.streamingio
 
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 import scala.util.control.TailCalls
 import scala.util.control.TailCalls.TailRec
 
@@ -26,4 +26,3 @@ object SyncTask:
 
       def attempt: SyncTask[Try[A]] =
         self.map(t => Success(t))
-    

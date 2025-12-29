@@ -1,6 +1,6 @@
 package fpinscala.answers.streamingio
 
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 import fpinscala.answers.iomonad.*
 
 /*

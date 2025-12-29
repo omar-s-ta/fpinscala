@@ -3,7 +3,7 @@ package fpinscala.exercises.datastructures
 import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Gen.`**`
 import fpinscala.answers.testing.exhaustive.Prop.*
-import fpinscala.exercises.common.Common.{genShortNumber, genDoubleList as genDoubleSList, genIntList as genIntSList}
+import fpinscala.exercises.common.Common.{genDoubleList as genDoubleSList, genIntList as genIntSList, genShortNumber}
 import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.datastructures.*
 import fpinscala.exercises.datastructures.List.*
@@ -23,11 +23,11 @@ class ListSuite extends PropSuite:
   private val genSmallNum: Gen[Int] = Gen.choose(-10, 10)
 
   test("List.tail")(genIntList):
-    case Nil         => intercept[java.lang.Exception](List.tail(Nil))
+    case Nil => intercept[java.lang.Exception](List.tail(Nil))
     case Cons(x, xs) => assertEquals(List.tail(Cons(x, xs)), xs)
 
   test("List.setHead")(genIntList):
-    case Nil         => intercept[java.lang.Exception](List.setHead(Nil, 0))
+    case Nil => intercept[java.lang.Exception](List.setHead(Nil, 0))
     case Cons(x, xs) => assertEquals(List.setHead(Cons(x, xs), 0), Cons(0, xs))
 
   test("List.drop")(genIntList ** genSmallNum):
@@ -40,7 +40,7 @@ class ListSuite extends PropSuite:
       assertEquals(List.dropWhile(list, f), scalaListToList(listToScalaList(list).dropWhile(f)))
 
   test("List.init")(genIntList):
-    case Nil  => intercept[java.lang.Exception](List.init(Nil))
+    case Nil => intercept[java.lang.Exception](List.init(Nil))
     case list => assertEquals(List.init(list), scalaListToList(listToScalaList(list).init))
 
   test("List.length")(genIntList): list =>
@@ -112,8 +112,10 @@ class ListSuite extends PropSuite:
 
   test("List.addPairwise")(genIntList ** genIntList):
     case list1 ** list2 =>
-      val expectedSList = listToScalaList(list1).zip(listToScalaList(list2)).map:
-        case (a, b) => a + b
+      val expectedSList = listToScalaList(list1)
+        .zip(listToScalaList(list2))
+        .map:
+          case (a, b) => a + b
       assertEquals(List.addPairwise(list1, list2), scalaListToList(expectedSList))
 
   /*
@@ -139,9 +141,9 @@ class ListSuite extends PropSuite:
       )
 
   private def listToScalaList[A](list: List[A]): SList[A] = list match
-    case Nil         => SList.empty[A]
+    case Nil => SList.empty[A]
     case Cons(x, xs) => x +: listToScalaList(xs)
 
   private def scalaListToList[A](slist: SList[A]): List[A] = slist match
-    case SNil      => Nil
+    case SNil => Nil
     case h :: tail => Cons(h, scalaListToList(tail))

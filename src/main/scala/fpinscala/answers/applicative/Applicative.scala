@@ -38,7 +38,7 @@ trait Applicative[F[_]] extends Functor[F]:
   def sequence[A](fas: List[F[A]]): F[List[A]] =
     traverse(fas)(fa => fa)
 
-  def traverse[A,B](as: List[A])(f: A => F[B]): F[List[B]] =
+  def traverse[A, B](as: List[A])(f: A => F[B]): F[List[B]] =
     as.foldRight(unit(List[B]()))((a, acc) => f(a).map2(acc)(_ :: _))
 
   def replicateM[A](n: Int, fa: F[A]): F[List[A]] =
@@ -51,14 +51,16 @@ trait Applicative[F[_]] extends Functor[F]:
     def map3[B, C, D](
       fb: F[B],
       fc: F[C]
-    )(f: (A, B, C) => D): F[D] =
+    )(f: (A, B, C) => D
+    ): F[D] =
       apply(apply(apply(unit(f.curried))(fa))(fb))(fc)
 
     def map4[B, C, D, E](
       fb: F[B],
       fc: F[C],
       fd: F[D]
-    )(f: (A, B, C, D) => E): F[E] =
+    )(f: (A, B, C, D) => E
+    ): F[E] =
       apply(apply(apply(apply(unit(f.curried))(fa))(fb))(fc))(fd)
 
   def product[G[_]](G: Applicative[G]): Applicative[[x] =>> (F[x], G[x])] = new:
@@ -100,7 +102,7 @@ object Applicative:
   enum Validated[+E, +A]:
     case Valid(get: A) extends Validated[Nothing, A]
     case Invalid(error: E) extends Validated[E, Nothing]
-  
+
   object Validated:
     given validatedApplicative[E: Monoid]: Applicative[Validated[E, _]] with
       def unit[A](a: => A) = Valid(a)
@@ -122,16 +124,15 @@ object Applicative:
 
     def validBirthdate(birthdate: String): Validated[List[String], LocalDate] =
       try Validated.Valid(LocalDate.parse(birthdate))
-      catch case _: java.time.format.DateTimeParseException =>
-        Validated.Invalid(List("Birthdate must be in the form yyyy-MM-dd"))
+      catch
+        case _: java.time.format.DateTimeParseException =>
+          Validated.Invalid(List("Birthdate must be in the form yyyy-MM-dd"))
 
     def validPhone(phoneNumber: String): Validated[List[String], String] =
       if phoneNumber.matches("[0-9]{10}") then Validated.Valid(phoneNumber)
       else Validated.Invalid(List("Phone number must be 10 digits"))
 
-    def validateWebForm(name: String,
-                        birthdate: String,
-                        phone: String): Validated[List[String], WebForm] =
+    def validateWebForm(name: String, birthdate: String, phone: String): Validated[List[String], WebForm] =
       validName(name).map3(
         validBirthdate(birthdate),
         validPhone(phone)
@@ -144,7 +145,7 @@ object Applicative:
       def empty: A
 
     given validatedApplicative[E: Semigroup]: Applicative[Validated[E, _]] with
-      import Validated.{Valid, Invalid}
+      import Validated.{Invalid, Valid}
       def unit[A](a: => A) = Valid(a)
       extension [A](fa: Validated[E, A])
         override def map2[B, C](fb: Validated[E, B])(f: (A, B) => C) =
@@ -172,8 +173,7 @@ object Applicative:
       else Validated.Invalid(NonEmptyList("Name cannot be empty"))
 
     def validBirthdate(birthdate: String): Validated[NonEmptyList[String], LocalDate] =
-      try
-        Validated.Valid(LocalDate.parse(birthdate))
+      try Validated.Valid(LocalDate.parse(birthdate))
       catch
         case _: java.time.format.DateTimeParseException =>
           Validated.Invalid(NonEmptyList("Birthdate must be in the form yyyy-MM-dd"))
@@ -182,9 +182,7 @@ object Applicative:
       if phoneNumber.matches("[0-9]{10}") then Validated.Valid(phoneNumber)
       else Validated.Invalid(NonEmptyList("Phone number must be 10 digits"))
 
-    def validateWebForm(name: String,
-                        birthdate: String,
-                        phone: String): Validated[NonEmptyList[String], WebForm] =
+    def validateWebForm(name: String, birthdate: String, phone: String): Validated[NonEmptyList[String], WebForm] =
       validName(name).map3(
         validBirthdate(birthdate),
         validPhone(phone)
@@ -198,8 +196,7 @@ object Applicative:
 
   given optionMonad: Monad[Option] with
     def unit[A](a: => A): Option[A] = Some(a)
-    extension [A](oa: Option[A])
-      override def flatMap[B](f: A => Option[B]) = oa.flatMap(f)
+    extension [A](oa: Option[A]) override def flatMap[B](f: A => Option[B]) = oa.flatMap(f)
 
   given eitherMonad[E]: Monad[Either[E, _]] with
     def unit[A](a: => A): Either[E, A] = Right(a)

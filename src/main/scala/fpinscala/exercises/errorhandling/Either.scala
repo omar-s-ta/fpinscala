@@ -4,7 +4,7 @@ package fpinscala.exercises.errorhandling
 import scala.{Either as _, Left as _, Right as _}
 import scala.util.control.NonFatal
 
-enum Either[+E,+A]:
+enum Either[+E, +A]:
   case Left(get: E)
   case Right(get: A)
 
@@ -17,17 +17,15 @@ enum Either[+E,+A]:
   def map2[EE >: E, B, C](b: Either[EE, B])(f: (A, B) => C): Either[EE, C] = ???
 
 object Either:
-  def traverse[E,A,B](es: List[A])(f: A => Either[E, B]): Either[E, List[B]] = ???
+  def traverse[E, A, B](es: List[A])(f: A => Either[E, B]): Either[E, List[B]] = ???
 
-  def sequence[E,A](es: List[Either[E,A]]): Either[E,List[A]] = ???
+  def sequence[E, A](es: List[Either[E, A]]): Either[E, List[A]] = ???
 
-  def mean(xs: IndexedSeq[Double]): Either[String, Double] = 
-    if xs.isEmpty then
-      Left("mean of empty list!")
-    else 
-      Right(xs.sum / xs.length)
+  def mean(xs: IndexedSeq[Double]): Either[String, Double] =
+    if xs.isEmpty then Left("mean of empty list!")
+    else Right(xs.sum / xs.length)
 
-  def safeDiv(x: Int, y: Int): Either[Throwable, Int] = 
+  def safeDiv(x: Int, y: Int): Either[Throwable, Int] =
     try Right(x / y)
     catch case NonFatal(t) => Left(t)
 

@@ -2,7 +2,7 @@ package fpinscala.answers.applicative
 
 import fpinscala.answers.monads.Functor
 import fpinscala.answers.state.State
-import fpinscala.answers.monoids.{Monoid, Foldable}
+import fpinscala.answers.monoids.{Foldable, Monoid}
 import Applicative.Const
 
 trait Traverse[F[_]] extends Functor[F], Foldable[F]:
@@ -20,8 +20,7 @@ trait Traverse[F[_]] extends Functor[F], Foldable[F]:
   object Id:
     given idMonad: Monad[Id] with
       def unit[A](a: => A) = a
-      extension [A](a: A)
-        override def flatMap[B](f: A => B): B = f(a)
+      extension [A](a: A) override def flatMap[B](f: A => B): B = f(a)
 
   extension [A](fa: F[A])
     def map[B](f: A => B): F[B] =
@@ -37,29 +36,30 @@ trait Traverse[F[_]] extends Functor[F], Foldable[F]:
       fa.mapAccum(List[A]())((a, s) => ((), a :: s))(1).reverse
 
     def zipWithIndex_ : F[(A, Int)] =
-      fa.traverse(a => 
+      fa.traverse(a =>
         for
           i <- State.get[Int]
           _ <- State.set(i + 1)
-        yield (a, i)
-      ).run(0)(0)
+        yield (a, i))
+        .run(0)(0)
 
     def toList_ : List[A] =
-      fa.traverse(a => 
+      fa.traverse(a =>
         for
           as <- State.get[List[A]] // Get the current state, the accumulated list.
-          _  <- State.set(a :: as) // Add the current element and set the new list as the new state.
-        yield ()
-      ).run(Nil)(1).reverse
+          _ <- State.set(a :: as) // Add the current element and set the new list as the new state.
+        yield ())
+        .run(Nil)(1)
+        .reverse
 
     def mapAccum[S, B](s: S)(f: (A, S) => (B, S)): (F[B], S) =
-      fa.traverse(a => 
+      fa.traverse(a =>
         for
           s1 <- State.get[S]
           (b, s2) = f(a, s1)
-          _  <- State.set(s2)
-        yield b
-      ).run(s)
+          _ <- State.set(s2)
+        yield b)
+        .run(s)
 
     def zipWithIndex: F[(A, Int)] =
       fa.mapAccum(0)((a, s) => ((a, s), s + 1))(0)
@@ -85,7 +85,8 @@ trait Traverse[F[_]] extends Functor[F], Foldable[F]:
         case (b, a :: as) => ((Some(a): Option[A], b), as)
       ._1
 
-    def fuse[M[_], N[_], B](f: A => M[B], g: A => N[B])(using m: Applicative[M], n: Applicative[N]): (M[F[B]], N[F[B]]) =
+    def fuse[M[_], N[_], B](f: A => M[B], g: A => N[B])(using m: Applicative[M], n: Applicative[N])
+      : (M[F[B]], N[F[B]]) =
       fa.traverse[[x] =>> (M[x], N[x]), B](a => (f(a), g(a)))(using m.product(n))
 
   def compose[G[_]: Traverse]: Traverse[[x] =>> F[G[x]]] = new:
@@ -107,13 +108,13 @@ object Traverse:
       override def traverse[G[_]: Applicative, B](f: A => G[B]): G[Option[B]] =
         oa match
           case Some(a) => f(a).map(Some(_))
-          case None    => summon[Applicative[G]].unit(None)
+          case None => summon[Applicative[G]].unit(None)
 
   given treeTraverse: Traverse[Tree] = new:
     extension [A](ta: Tree[A])
       override def traverse[G[_]: Applicative, B](f: A => G[B]): G[Tree[B]] =
         f(ta.head).map2(ta.tail.traverse(a => a.traverse(f)))(Tree(_, _))
-  
+
   given mapTraverse[K]: Traverse[Map[K, _]] with
     extension [A](m: Map[K, A])
       override def traverse[G[_]: Applicative, B](f: A => G[B]): G[Map[K, B]] =

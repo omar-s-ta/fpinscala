@@ -13,15 +13,16 @@ object SimplePulls:
     def step: Either[R, (O, Pull[O, R])] = this match
       case Result(r) => Left(r)
       case Output(o) => Right(o, Pull.done)
-      case FlatMap(source, f) => 
+      case FlatMap(source, f) =>
         source match
           case FlatMap(s2, g) => s2.flatMap(x => g(x).flatMap(y => f(y))).step
-          case other => other.step match
-            case Left(r) => f(r).step
-            case Right((hd, tl)) => Right((hd, tl.flatMap(f)))
+          case other =>
+            other.step match
+              case Left(r) => f(r).step
+              case Right((hd, tl)) => Right((hd, tl.flatMap(f)))
 
     @annotation.tailrec
-    final def fold[A](init: A)(f: (A, O) => A): (R, A) = 
+    final def fold[A](init: A)(f: (A, O) => A): (R, A) =
       step match
         case Left(r) => (r, init)
         case Right((hd, tl)) => tl.fold(f(init, hd))(f)
@@ -46,15 +47,17 @@ object SimplePulls:
 
     def take(n: Int): Pull[O, Option[R]] =
       if n <= 0 then Result(None)
-      else uncons.flatMap:
-        case Left(r) => Result(Some(r))
-        case Right((hd, tl)) => Output(hd) >> tl.take(n - 1)
+      else
+        uncons.flatMap:
+          case Left(r) => Result(Some(r))
+          case Right((hd, tl)) => Output(hd) >> tl.take(n - 1)
 
     def drop(n: Int): Pull[O, R] =
       if n <= 0 then this
-      else uncons.flatMap:
-        case Left(r) => Result(r)
-        case Right((_, tl)) => tl.drop(n - 1)
+      else
+        uncons.flatMap:
+          case Left(r) => Result(r)
+          case Right((_, tl)) => tl.drop(n - 1)
 
     def takeWhile(f: O => Boolean): Pull[O, Pull[O, R]] =
       uncons.flatMap:
@@ -62,7 +65,7 @@ object SimplePulls:
         case Right((hd, tl)) =>
           if f(hd) then Output(hd) >> tl.takeWhile(f)
           else Result(Output(hd) >> tl)
-    
+
     def dropWhile(f: O => Boolean): Pull[Nothing, Pull[O, R]] =
       uncons.flatMap:
         case Left(r) => Result(Result(r))
@@ -166,11 +169,12 @@ object SimplePulls:
         go(collection.immutable.Queue.empty, self)
 
       def slidingMeanViaMapAccumulate(n: Int): Pull[Double, R] =
-        self.mapAccumulate(collection.immutable.Queue.empty[Int]): (window, o) =>
-          val newWindow = if window.size < n then window :+ o else window.tail :+ o
-          val meanOfNewWindow = newWindow.sum / newWindow.size.toDouble
-          (newWindow, meanOfNewWindow)
-        .map(_(1))
+        self
+          .mapAccumulate(collection.immutable.Queue.empty[Int]): (window, o) =>
+            val newWindow = if window.size < n then window :+ o else window.tail :+ o
+            val meanOfNewWindow = newWindow.sum / newWindow.size.toDouble
+            (newWindow, meanOfNewWindow)
+          .map(_(1))
 
     given [O]: Monad[[x] =>> Pull[O, x]] with
       def unit[A](a: => A): Pull[O, A] = Result(a)
@@ -190,9 +194,8 @@ object SimplePulls:
         def flatMap[B](f: A => Pull[B, Unit]): Pull[B, Unit] =
           pa.flatMapOutput(f)
 
-    extension [O](self: Pull[O, Unit])
-      def toStream: Stream[O] = self
-  
+    extension [O](self: Pull[O, Unit]) def toStream: Stream[O] = self
+
   opaque type Stream[+O] = Pull[O, Unit]
   object Stream:
     def apply[O](os: O*): Stream[O] =
@@ -200,7 +203,7 @@ object SimplePulls:
     extension [O](self: Stream[O])
       def toPull: Pull[O, Unit] = self
 
-      def fold[A](init: A)(f: (A, O) => A): A = 
+      def fold[A](init: A)(f: (A, O) => A): A =
         self.fold(init)(f)(1)
 
       def toList: List[O] =
@@ -226,7 +229,7 @@ object SimplePulls:
 end SimplePulls
 
 object SimplePullExamples:
-  import SimplePulls.{Pipe, Stream, Pull}
+  import SimplePulls.{Pipe, Pull, Stream}
 
   val nonEmpty: Pipe[String, String] =
     _.filter(_.nonEmpty)
@@ -271,15 +274,18 @@ object SimplePullExamples:
     count andThen existsHalting(_ > 40000)
 
   def fromIterator[O](itr: Iterator[O]): Stream[O] =
-    Pull.unfold(itr)(itr =>
-      if itr.hasNext then Right((itr.next(), itr))
-      else Left(itr)
-    ).void.toStream
+    Pull
+      .unfold(itr)(itr =>
+        if itr.hasNext then Right((itr.next(), itr))
+        else Left(itr))
+      .void
+      .toStream
 
   def processFile[A](
     file: java.io.File,
-    p: Pipe[String, A],
-  )(using m: Monoid[A]): IO[A] = IO:
+    p: Pipe[String, A]
+  )(using m: Monoid[A]
+  ): IO[A] = IO:
     val source = scala.io.Source.fromFile(file)
     try fromIterator(source.getLines).pipe(p).fold(m.empty)(m.combine)
     finally source.close()
@@ -297,20 +303,21 @@ object SimplePullExamples:
     src => src.filter(_.charAt(0) != '#')
 
   def asDouble: Pipe[String, Double] =
-    src => src.flatMap: s =>
-      s.toDoubleOption match
-        case Some(d) => Stream(d)
-        case None => Stream()
+    src =>
+      src.flatMap: s =>
+        s.toDoubleOption match
+          case Some(d) => Stream(d)
+          case None => Stream()
 
   def convertToCelsius: Pipe[Double, Double] =
     src => src.map(toCelsius)
 
   val conversion: Pipe[String, Double] =
-    trimmed andThen 
-    nonEmpty andThen 
-    nonComment andThen 
-    asDouble andThen 
-    convertToCelsius
+    trimmed andThen
+      nonEmpty andThen
+      nonComment andThen
+      asDouble andThen
+      convertToCelsius
 
   import java.nio.file.{Files, Paths}
 

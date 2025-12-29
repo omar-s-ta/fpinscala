@@ -1,7 +1,7 @@
 package fpinscala.exercises.monoids
 
 trait Foldable[F[_]]:
-  import Monoid.{endoMonoid, dual}
+  import Monoid.{dual, endoMonoid}
 
   extension [A](as: F[A])
     def foldRight[B](acc: B)(f: (A, B) => B): B =
@@ -49,7 +49,7 @@ object Foldable:
   import fpinscala.exercises.datastructures.Tree
 
   given Foldable[Tree] with
-    import Tree.{Leaf, Branch}
+    import Tree.{Branch, Leaf}
     extension [A](as: Tree[A])
       override def foldRight[B](acc: B)(f: (A, B) => B) =
         ???

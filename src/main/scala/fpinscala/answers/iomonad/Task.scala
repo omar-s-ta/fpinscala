@@ -2,7 +2,7 @@ package fpinscala.answers.iomonad
 
 import fpinscala.answers.parallelism.Nonblocking.*
 import java.util.concurrent.ExecutorService
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
 /*

@@ -32,7 +32,7 @@ object Monoid:
 
   def endoMonoid[A]: Monoid[A => A] = ???
 
-  import fpinscala.exercises.testing.{Prop, Gen}
+  import fpinscala.exercises.testing.{Gen, Prop}
   // import Gen.`**`
 
   def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop = ???
@@ -52,10 +52,10 @@ object Monoid:
   def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
     ???
 
-  def par[A](m: Monoid[A]): Monoid[Par[A]] = 
+  def par[A](m: Monoid[A]): Monoid[Par[A]] =
     ???
 
-  def parFoldMap[A,B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] = 
+  def parFoldMap[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] =
     ???
 
   def ordered(ints: IndexedSeq[Int]): Boolean =

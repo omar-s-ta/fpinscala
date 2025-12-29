@@ -76,5 +76,5 @@ class FoldableSuite extends PropSuite:
     assertEquals(toList(option), List.from(option))
 
   private def treeToList[A](t: Tree[A]): List[A] = t match
-    case Leaf(v)      => List(v)
+    case Leaf(v) => List(v)
     case Branch(l, r) => treeToList(l) ++ treeToList(r)
