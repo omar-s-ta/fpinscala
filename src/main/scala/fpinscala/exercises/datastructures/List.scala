@@ -1,5 +1,7 @@
 package fpinscala.exercises.datastructures
 
+import scala.annotation.tailrec
+
 /** `List` data type, parameterized on a type, `A`. */
 enum List[+A]:
   /** A `List` data constructor representing the empty list. */
@@ -61,7 +63,12 @@ object List: // `List` companion object. Contains functions for creating and wor
 
   def length[A](l: List[A]): Int = ???
 
-  def foldLeft[A, B](l: List[A], acc: B, f: (B, A) => B): B = ???
+  @tailrec
+  def foldLeft[A, B](l: List[A], acc: B, f: (B, A) => B): B =
+    l match
+      case Nil => acc
+      case Cons(head, tail) =>
+        foldLeft(tail, f(acc, head), f)
 
   def sumViaFoldLeft(ns: List[Int]): Int = ???
 

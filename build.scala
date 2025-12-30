@@ -1,8 +1,7 @@
-//> using scala 3.3.4
+//> using scala 3.7.2
 
 //> using options -feature
 //> using options -deprecation
-//> using options -source:future
-//> using options -Ykind-projector:underscores
+//> using options -Xkind-projector:underscores
 
-//> using lib org.scalameta::munit:0.7.29
+//> using dep org.scalameta::munit:1.2.1
