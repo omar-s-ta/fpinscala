@@ -20,6 +20,12 @@ class TreeSuite extends PropSuite:
       case Branch(l, r) => assertEquals(tree.depth, 1 + l.depth.max(r.depth))
     assertEquals(tree.size, toScalaList(tree).length)
 
+  test("Tr.depth")(genIntTr): tree =>
+    tree match
+      case Tr.Leaf(_) => assertEquals(tree.depth, 0)
+      case Tr.Branch(l, r) => assertEquals(tree.depth, 1 + l.depth.max(r.depth))
+    assertEquals(tree.size, toScalaList(tree).length)
+
   test("Tree.map")(genIntTree): tree =>
     assertEquals(toScalaList(tree.map(_.toString)), toScalaList(tree).map(_.map(_.toString)))
 

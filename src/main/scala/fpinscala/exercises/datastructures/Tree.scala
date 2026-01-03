@@ -58,6 +58,8 @@ object Tree:
 sealed trait Tr[+A]:
   def fold[B](f: A => B, g: (B, B) => B): B
   def map[B](f: A => B): Tr[B] = fold[Tr[B]](a => Tr.Leaf(f(a)), (l, r) => Tr.Branch(l, r))
+  def depth: Int = fold(_ => 0, 1 + _.max(_))
+  def size: Int = fold(_ => 1, 1 + _ + _)
 
 object Tr:
   case class Leaf[+A](value: A) extends Tr[A]:
