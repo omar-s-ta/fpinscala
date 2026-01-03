@@ -6,7 +6,7 @@ import fpinscala.exercises.common.Common.*
 import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.datastructures.Tree
 import fpinscala.exercises.datastructures.Tree.*
-import fpinscala.exercises.datastructures.TreeSuite.genIntTree
+import fpinscala.exercises.datastructures.TreeSuite.*
 
 import scala.List as SList
 
@@ -23,7 +23,13 @@ class TreeSuite extends PropSuite:
   test("Tree.map")(genIntTree): tree =>
     assertEquals(toScalaList(tree.map(_.toString)), toScalaList(tree).map(_.map(_.toString)))
 
+  test("Tr.map")(genIntTr): tree =>
+    assertEquals(toScalaList(tree.map(_.toString)), toScalaList(tree).map(_.map(_.toString)))
+
   test("Tree.fold")(genIntTree): tree =>
+    assertEquals(tree.fold(_.toString, _ + _), toScalaList(tree).flatMap(_.map(_.toString)).mkString)
+
+  test("Tr.fold")(genIntTr): tree =>
     assertEquals(tree.fold(_.toString, _ + _), toScalaList(tree).flatMap(_.map(_.toString)).mkString)
 
   test("Tree.sizeViaFold")(genIntTree): tree =>
@@ -47,6 +53,9 @@ class TreeSuite extends PropSuite:
   test("Tree.maximum")(genIntTree): tree =>
     assertEquals(tree.maximum, toScalaList(tree).max.getOrElse(0))
 
+  test("Tr.maximum")(genIntTr): tree =>
+    assertEquals(tree.maximum, toScalaList(tree).max.getOrElse(0))
+
   test("Tree.maximumViaFold")(genIntTree): tree =>
     assertEquals(tree.maximumViaFold, toScalaList(tree).max.getOrElse(0))
 
@@ -54,8 +63,13 @@ class TreeSuite extends PropSuite:
     case Leaf(v) => SList(Some(v))
     case Branch(l, r) => (Option.empty[A] +: toScalaList(l)) ++ toScalaList(r)
 
+  private def toScalaList[A](t: Tr[A]): SList[Option[A]] = t match
+    case Tr.Leaf(v) => SList(Some(v))
+    case Tr.Branch(l, r) => (Option.empty[A] +: toScalaList(l)) ++ toScalaList(r)
+
 object TreeSuite:
   val genIntTree: Gen[Tree[Int]] = genTree(Gen.int)
+  val genIntTr: Gen[Tr[Int]] = genTr(Gen.int)
 
   private def genTree[A](g: Gen[A]): Gen[Tree[A]] =
     def loop(): Gen[Tree[A]] =
@@ -66,4 +80,15 @@ object TreeSuite:
             left <- loop()
             right <- loop()
           yield Branch(left, right)
+    loop()
+
+  private def genTr[A](g: Gen[A]): Gen[Tr[A]] =
+    def loop(): Gen[Tr[A]] =
+      Gen.boolean.flatMap:
+        if _ then g.map(n => Tr.Leaf(n))
+        else
+          for
+            left <- loop()
+            right <- loop()
+          yield Tr.Branch(left, right)
     loop()
