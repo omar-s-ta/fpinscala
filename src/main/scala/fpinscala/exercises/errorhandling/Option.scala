@@ -49,10 +49,24 @@ object Option:
     if xs.isEmpty then None
     else Some(xs.sum / xs.length)
 
-  def variance(xs: Seq[Double]): Option[Double] = ???
+  def variance(xs: Seq[Double]): Option[Double] =
+    mean(xs).flatMap(m => mean(xs.map(x => math.pow(x - m, 2))))
 
-  def map2[A, B, C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = ???
+  def map2[A, B, C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
+    a.flatMap(aa => b.flatMap(bb => Some(f(aa, bb))))
 
-  def sequence[A](as: List[Option[A]]): Option[List[A]] = ???
+  def sequence_1[A](as: List[Option[A]]): Option[List[A]] =
+    as match
+      case head :: tail => head.flatMap(h => sequence(tail).map(h :: _))
+      case Nil => Some(List())
 
-  def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] = ???
+  def sequence_2[A](as: List[Option[A]]): Option[List[A]] =
+    as.foldRight(Some(List.empty[A])): (a, acc) =>
+      map2(a, acc)(_ :: _)
+
+  def sequence[A](as: List[Option[A]]): Option[List[A]] =
+    traverse(as)(identity)
+
+  def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] =
+    as.foldRight(Some(List.empty[B])): (a, acc) =>
+      map2(f(a), acc)(_ :: _)
