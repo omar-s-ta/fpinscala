@@ -4,4 +4,4 @@
 //> using options -deprecation
 //> using options -Xkind-projector:underscores
 
-//> using dep org.scalameta::munit:1.2.1
+//> using dep org.scalameta::munit:1.2.2
