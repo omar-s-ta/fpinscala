@@ -105,15 +105,28 @@ object State:
     def run(s: S): (A, S) = underlying(s)
 
     def map[B](f: A => B): State[S, B] =
-      ???
+      flatMap(a => unit(f(a)))
 
     def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
-      ???
+      for
+        a <- run
+        b <- sb
+      yield f(a, b)
 
     def flatMap[B](f: A => State[S, B]): State[S, B] =
-      ???
+      s =>
+        val (a, s1) = run(s)
+        f(a)(s1)
 
   def apply[S, A](f: S => (A, S)): State[S, A] = f
+  def unit[S, A](a: A): State[S, A] = s => (a, s)
+
+  def sequence[S, A](as: List[State[S, A]]): State[S, List[A]] =
+    traverse(as)(identity)
+
+  def traverse[S, A, B](as: List[A])(f: A => State[S, B]): State[S, List[B]] =
+    as.foldRight(unit(List.empty[B])): (a, acc) =>
+      f(a).map2(acc)(_ :: _)
 
 enum Input:
   case Coin, Turn
