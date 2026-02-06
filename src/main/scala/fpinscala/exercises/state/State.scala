@@ -50,20 +50,53 @@ object RNG:
     val (d3, r3) = double(r2)
     ((d1, d2, d3), r3)
 
-  def ints(count: Int)(rng: RNG): (List[Int], RNG) =
+  def _ints(count: Int)(rng: RNG): (List[Int], RNG) =
     (0 until count).foldLeft((List.empty[Int], rng)): (acc, _) =>
       val (n, r) = acc(1).nextInt
       (n :: acc(0), r)
 
-  def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
+  def ints(count: Int): Rand[List[Int]] =
+    sequence(List.fill(count)(_.nextInt))
 
-  def sequence[A](rs: List[Rand[A]]): Rand[List[A]] = ???
+  def _double: Rand[Double] =
+    map(nonNegativeInt)(n => (n.toDouble / (Int.MaxValue.toDouble + 1)))
 
-  def flatMap[A, B](r: Rand[A])(f: A => Rand[B]): Rand[B] = ???
+  def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+    r0 =>
+      val (a, r1) = ra(r0)
+      val (b, r2) = rb(r1)
+      (f(a, b), r2)
 
-  def mapViaFlatMap[A, B](r: Rand[A])(f: A => B): Rand[B] = ???
+  def sequence[A](rs: List[Rand[A]]): Rand[List[A]] =
+    traverse(rs)(identity)
 
-  def map2ViaFlatMap[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
+  def traverse[A, B](as: List[A])(f: A => Rand[B]): Rand[List[B]] =
+    as.foldRight(unit(List.empty[B])): (a, acc) =>
+      map2(f(a), acc)(_ :: _)
+
+  def _flatMap[A, B](r: Rand[A])(f: A => Rand[B]): Rand[B] =
+    rng =>
+      val (rb, rng1) = map(r)(f)(rng)
+      rb(rng1)
+
+  def flatMap[A, B](r: Rand[A])(f: A => Rand[B]): Rand[B] =
+    rng =>
+      val (a, rng1) = r(rng)
+      f(a)(rng1)
+
+  def nonNegativeLessThan(n: Int): Rand[Int] =
+    flatMap(nonNegativeInt): i =>
+      val mod = i % n
+      if i + (n - 1) - mod >= 0 then unit(mod) else nonNegativeLessThan(n)
+
+  def mapViaFlatMap[A, B](r: Rand[A])(f: A => B): Rand[B] =
+    flatMap(r)(a => unit(f(a)))
+
+  def _map2ViaFlatMap[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+    flatMap(ra)(a => flatMap(rb)(b => unit(f(a, b))))
+
+  def map2ViaFlatMap[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+    flatMap(ra)(a => map(rb)(b => f(a, b)))
 
 opaque type State[S, +A] = S => (A, S)
 
