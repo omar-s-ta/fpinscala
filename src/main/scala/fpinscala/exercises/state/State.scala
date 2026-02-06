@@ -143,4 +143,18 @@ enum Input:
 case class Machine(locked: Boolean, candies: Int, coins: Int)
 
 object Candy:
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] =
+    for
+      _ <- State.traverse(inputs)(input => State.modify(next(input)))
+      state <- State.get
+    yield (state.coins, state.candies)
+
+  def next(input: Input)(machine: Machine): Machine =
+    (input, machine) match
+      case (_, Machine(_, 0, _)) => machine
+      case (Input.Coin, Machine(false, _, _)) => machine
+      case (Input.Turn, Machine(true, _, _)) => machine
+      case (Input.Coin, Machine(true, _, _)) =>
+        Machine(false, machine.candies, machine.coins + 1)
+      case (Input.Turn, Machine(false, _, _)) =>
+        Machine(true, machine.candies - 1, machine.coins)
