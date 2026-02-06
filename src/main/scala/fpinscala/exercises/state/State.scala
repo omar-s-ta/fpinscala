@@ -121,6 +121,15 @@ object State:
   def apply[S, A](f: S => (A, S)): State[S, A] = f
   def unit[S, A](a: A): State[S, A] = s => (a, s)
 
+  def get[S]: State[S, S] = s => (s, s)
+  def set[S](s: S): State[S, Unit] = _ => ((), s)
+
+  def modify[S](f: S => S): State[S, Unit] =
+    for
+      s <- get
+      _ <- set(f(s))
+    yield ()
+
   def sequence[S, A](as: List[State[S, A]]): State[S, List[A]] =
     traverse(as)(identity)
 
