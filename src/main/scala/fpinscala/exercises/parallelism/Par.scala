@@ -165,3 +165,12 @@ object Examples:
     else
       val (l, r) = ints.splitAt(ints.size / 2) // Divide the sequence in half using the `splitAt` function.
       sum(l) + sum(r) // Recursively sum both halves and add the results together.
+
+  def parSum(ints: IndexedSeq[Int]): Par[Int] =
+    parAction(ints)(_ + _)
+
+  def parAction[A](as: IndexedSeq[A])(f: (A, A) => A): Par[A] =
+    if as.size == 1 then unit(as.head)
+    else
+      val (l, r) = as.splitAt(as.size / 2)
+      fork(parAction(l)(f)).map2(parAction(r)(f))(f)
