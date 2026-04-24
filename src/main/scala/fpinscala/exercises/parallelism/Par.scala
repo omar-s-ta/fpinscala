@@ -114,7 +114,7 @@ object Par:
 
   def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
     es =>
-      val ind = n.run(es).get // Full source files
+      val ind = n.run(es).get % choices.size // Full source files
       choices(ind).run(es)
 
   def choiceViaChoiceN[A](a: Par[Boolean])(ifTrue: Par[A], ifFalse: Par[A]): Par[A] =

@@ -123,7 +123,10 @@ object Nonblocking:
 
     /* The code here is very similar. */
     def choiceN[A](p: Par[Int])(ps: List[Par[A]]): Par[A] =
-      ???
+      es =>
+        cb =>
+          p(es): n =>
+            eval(es)(ps(n % ps.size)(es)(cb))
 
     def choiceViaChoiceN[A](a: Par[Boolean])(ifTrue: Par[A], ifFalse: Par[A]): Par[A] =
       ???
