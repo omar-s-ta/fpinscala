@@ -16,17 +16,16 @@ class GenSuite extends PropSuite:
 
 // Gen tests: Before using these tests (starting from Exercise 8.4),
 // add the next block to fpinscala.exercises.testing.Gen.scala file
-/* ToDo: fpinscala.exercises.testing.Gen.scala file's block
+  /* ToDo: fpinscala.exercises.testing.Gen.scala file's block
 opaque type Gen[+A] = State[RNG, A]
 
 object Gen:
   extension [A](self: Gen[A])
     // We should use a different method name to avoid looping (not 'run')
     def next(rng: RNG): (A, RNG) = self.run(rng)
- */
+   */
 
 // Gen tests:
-/*
   test("Exercise 8.4")(ExhGen.int ** ExhGen.int ** genRNG):
     case n ** m ** rng =>
       val (start, stopExclusive) = if n < m then (n, m) else (m, n)
@@ -67,8 +66,12 @@ object Gen:
       val genUnion = Gen.union(Gen.unit(n), Gen.unit(m))
       val genUnionList = genUnion.listOfN(shortSample)
       val (unionList, _) = genUnionList.next(rng)
-      assert(unionList.count(_ == n) >= shortSample / 3, "Values should be extracted with approximately equal likelihood")
-      assert(unionList.count(_ == m) >= shortSample / 3, "Values should be extracted with approximately equal likelihood")
+      assert(
+        unionList.count(_ == n) >= shortSample / 3,
+        "Values should be extracted with approximately equal likelihood")
+      assert(
+        unionList.count(_ == m) >= shortSample / 3,
+        "Values should be extracted with approximately equal likelihood")
 
   test("Exercise 8.8")(ExhGen.int ** ExhGen.int ** genRNG):
     case n ** m ** rng =>
@@ -91,7 +94,6 @@ object Gen:
       val (unionList3, _) = genUnion3.listOfN(shortSample).next(rng)
       assert(unionList3.count(_ == n) >= shortSample / 5, "g2 is twice as common as g1")
       assert(unionList3.count(_ == m) >= shortSample / 2, "g2 is twice as common as g1")
- */
 
 // Prop tests: Before using these tests (starting from Exercise 8.9),
 // add the next block to fpinscala.exercises.testing.Gen.scala file
