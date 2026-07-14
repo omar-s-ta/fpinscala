@@ -137,7 +137,7 @@ object SGen:
  */
 
 // SGen tests
-/*
+
   test("Exercises 8.10 + 8.11")(ExhGen.int ** genRNG):
     case n ** rng0 =>
       val sGenA = SGen(Gen.unit(_))
@@ -158,4 +158,3 @@ object SGen:
     case n ** rng =>
       val (randomNonEmptyList, _) = Gen.boolean.nonEmptyList(n).next(rng)
       assert(randomNonEmptyList.nonEmpty)
- */
