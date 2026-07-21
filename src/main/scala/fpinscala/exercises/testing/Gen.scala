@@ -43,10 +43,13 @@ object Prop:
   enum Result:
     case Passed
     case Falsified(failure: FailedCase, successes: SuccessCount)
+    case Proved
 
     def isFalsified: Boolean = this match
-      case Passed => false
+      case Passed | Proved => false
       case Falsified(_, _) => true
+
+  val executor: ExecutorService = Executors.newCachedThreadPool()
 
   extension (self: Prop)
     def run(maxSize: MaxSize = 100, testCases: TestCases = 100, rng: RNG = RNG.Simple(System.currentTimeMillis)): Unit =
@@ -55,6 +58,12 @@ object Prop:
           println(s"! Falsified after $n passed tests:\n $msg")
         case Result.Passed =>
           println(s"+ OK, passed $testCases tests.")
+        case Result.Proved =>
+          println(s"+ OK, proved property.")
+
+  extension (self: Prop)
+    def verify(p: => Boolean): Prop =
+      (_, _, _) => if p then Result.Passed else Falsified("()", 0)
 
   extension (self: Prop)
     def check(
@@ -68,7 +77,7 @@ object Prop:
     def &&(that: Prop): Prop =
       (max, n, rng) =>
         self.tag("and-left")(max, n, rng) match
-          case Result.Passed => that.tag("and-right")(max, n, rng)
+          case Result.Passed | Result.Proved => that.tag("and-right")(max, n, rng)
           case failed => failed
 
   extension (self: Prop)
@@ -101,7 +110,6 @@ object Prop:
         .find(_.isFalsified)
         .getOrElse(Result.Passed)
 
-  
   @targetName("forAllSized")
   def forAll[A](g: SGen[A])(f: A => Boolean): Prop =
     (max, n, rng) =>
@@ -112,6 +120,9 @@ object Prop:
         props.map[Prop](p => (max, n, rng) => p(max, casesPerSize, rng)).toList.reduce(_ && _)
       prop(max, n, rng)
 
+  def forAllPar[A](g: Gen[A])(f: A => Par[Boolean]): Prop =
+    forAll(Gen.executors ** g)((ex, a) => f(a).run(ex).get)
+
   def randomLazyList[A](g: Gen[A])(rng: RNG): LazyList[A] =
     LazyList.unfold(rng)(rng => Some(g.run(rng)))
 
@@ -119,6 +130,9 @@ object Prop:
     s"test case: $s\n" +
       s"generated an exception: ${e.getMessage}\n" +
       s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
+
+  def equal[A](a: Par[A], b: Par[A]): Par[Boolean] =
+    a.map2(b)(_ == _)
 
 // S => (A, S)
 // RNG => (A, RNG)
@@ -128,11 +142,19 @@ object Gen:
   def unit[A](a: => A): Gen[A] =
     State.unit(a)
 
+  def executors: Gen[ExecutorService] = weighted(
+    choose(1, 4).map(Executors.newFixedThreadPool) -> 0.75,
+    unit(Executors.newCachedThreadPool) -> 0.25
+  )
+
   def boolean: Gen[Boolean] =
     State(RNG.boolean)
 
   def double: Gen[Double] =
     State(RNG.double)
+
+  def int: Gen[Int] =
+    State(RNG.int)
 
   def choose(start: Int, stopExclusive: Int): Gen[Int] =
     State(RNG.nonNegativeInt).map(n => start + n % (stopExclusive - start))
@@ -150,6 +172,12 @@ object Gen:
     def flatMap[B](f: A => Gen[B]): Gen[B] =
       State.flatMap(self)(f)
 
+    def map[B](f: A => B): Gen[B] =
+      State.map(self)(f)
+
+    def map2[B, C](g: Gen[B])(f: (A, B) => C): Gen[C] =
+      State.map2(self)(g)(f)
+
     def next(rng: RNG): (A, RNG) = self.run(rng)
 
     def listOfN(n: Int): Gen[List[A]] =
@@ -163,6 +191,10 @@ object Gen:
     def list: SGen[List[A]] = n => listOfN(n)
 
     def nonEmptyList: SGen[List[A]] = n => listOfN(n.max(1))
+
+    @annotation.targetName("product")
+    def **[B](g: Gen[B]): Gen[(A, B)] =
+      map2(g)(_ -> _)
 
 opaque type SGen[+A] = Int => Gen[A]
 
@@ -180,4 +212,11 @@ object SGen:
     val st = lst.sorted
     st.nonEmpty && st.zip(st.tail).forall((a, b) => a <= b)
 
+  val p4 = Prop.forAll(Gen.int): i =>
+    equal(
+      Par.unit(i).map(_ + 1),
+      Par.unit(i + 1)
+    ).run(executor).get()
+
   sortedProp.run()
+  p4.run()
