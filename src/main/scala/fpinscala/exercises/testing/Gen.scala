@@ -61,9 +61,11 @@ object Prop:
         case Result.Proved =>
           println(s"+ OK, proved property.")
 
-  extension (self: Prop)
-    def verify(p: => Boolean): Prop =
-      (_, _, _) => if p then Result.Passed else Falsified("()", 0)
+  def verify(p: => Boolean): Prop =
+    (_, _, _) => if p then Result.Passed else Falsified("()", 0)
+
+  def verifyPar(p: Par[Boolean]): Prop =
+    forAllPar(Gen.unit(()))(_ => p)
 
   extension (self: Prop)
     def check(
@@ -121,7 +123,8 @@ object Prop:
       prop(max, n, rng)
 
   def forAllPar[A](g: Gen[A])(f: A => Par[Boolean]): Prop =
-    forAll(Gen.executors ** g)((ex, a) => f(a).run(ex).get)
+    forAll(Gen.executors ** g):
+      case ex ** a => f(a).run(ex).get
 
   def randomLazyList[A](g: Gen[A])(rng: RNG): LazyList[A] =
     LazyList.unfold(rng)(rng => Some(g.run(rng)))
@@ -196,6 +199,9 @@ object Gen:
     def **[B](g: Gen[B]): Gen[(A, B)] =
       map2(g)(_ -> _)
 
+object `**`:
+  def unapply[A, B](p: (A, B)) = Some(p)
+
 opaque type SGen[+A] = Int => Gen[A]
 
 object SGen:
@@ -218,5 +224,13 @@ object SGen:
       Par.unit(i + 1)
     ).run(executor).get()
 
+  val p44 = Prop.verifyPar(
+    equal(
+      Par.unit(1).map(_ + 1),
+      Par.unit(2)
+    )
+  )
+
   sortedProp.run()
   p4.run()
+  p44.run()
