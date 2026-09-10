@@ -9,4 +9,7 @@ enum JSON:
   case JObject(get: Map[String, JSON])
 
 object JSON:
-  def jsonParser[Parser[+_]](P: Parsers[Parser]): Parser[JSON] = ???
+  def jsonParser[Parser[+_]](P: Parsers[Parser]): Parser[JSON] =
+    import P.*
+
+    ???
