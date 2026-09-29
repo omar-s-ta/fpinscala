@@ -105,7 +105,7 @@ trait Parsers[Parser[+_]]:
      * Sequences two parsers, ignoring the result of the first.
      * We wrap the ignored half in slice, since we don't care about its result.
      */
-    def *>[B](p2: => Parser[B]) =
+    def *>[B](p2: => Parser[B]): Parser[B] =
       p.slice.map2(p2)((_, b) => b)
 
     /**

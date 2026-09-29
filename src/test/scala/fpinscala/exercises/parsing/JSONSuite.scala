@@ -8,7 +8,6 @@ import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.parsing.JSON.*
 import fpinscala.exercises.parsing.{JSON, Parsers}
 
-// Exercise 9.9
 class JSONSuite extends PropSuite:
   private lazy val parser = JSON.jsonParser(UnitTestParser)
 

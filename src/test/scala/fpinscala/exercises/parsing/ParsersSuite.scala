@@ -7,9 +7,8 @@ import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.parsing.Parsers
 
 class ParsersSuite extends PropSuite:
-  import UnitTestParser.*
+  import SolParser.*
 
-  /*
   test("Parsers.char")(genChar): c =>
     assertEquals(char(c).run(c.toString), Right(c))
     val anotherChar = (c + 1).toChar
@@ -136,4 +135,3 @@ class ParsersSuite extends PropSuite:
 
   private def unbiasL[A, B, C](p: ((A, B), C)): (A, B, C) = (p(0)(0), p(0)(1), p(1))
   private def unbiasR[A, B, C](p: (A, (B, C))): (A, B, C) = (p(0), p(1)(0), p(1)(1))
-   */

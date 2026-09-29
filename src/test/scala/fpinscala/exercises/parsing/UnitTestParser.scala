@@ -39,7 +39,7 @@ object UnitTestParser extends Parsers[UnitTestParser.Parser]:
 
   import Result.{Failure, Success}
 
-  def succeed[A](a: A): Parser[A] =
+  override def succeed[A](a: A): Parser[A] =
     _ => Success(a, 0)
 
   def fail(msg: String): Parser[Nothing] =
