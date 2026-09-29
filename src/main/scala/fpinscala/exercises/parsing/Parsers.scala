@@ -309,6 +309,19 @@ object SolParser extends Parsers[SolParser.Parser]:
     location => Failure(location.toError(msg), true)
 
   extension [A](p: Parser[A])
+    override def many: Parser[List[A]] =
+      location =>
+        var buffer = new collection.mutable.ListBuffer[A]
+        def consume(parser: Parser[A], offset: Int): Result[List[A]] =
+          parser(location.advanceBy(offset)) match
+            case Success(get, charsConsumed) =>
+              buffer += get
+              consume(parser, offset + charsConsumed)
+            case Failure(e, true) => Failure(e, true)
+            case Failure(_, _) => Success(buffer.toList, offset)
+        consume(p, 0)
+
+  extension [A](p: Parser[A])
     override def label(msg: String): Parser[A] =
       location => p(location).mapError(_.label(msg))
 
