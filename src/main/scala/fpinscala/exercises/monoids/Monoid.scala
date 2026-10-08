@@ -16,26 +16,46 @@ object Monoid:
     def combine(a1: List[A], a2: List[A]) = a1 ++ a2
     val empty = Nil
 
-  lazy val intAddition: Monoid[Int] = ???
+  lazy val intAddition: Monoid[Int] = new:
+    def combine(a1: Int, a2: Int): Int = a1 + a2
+    val empty: Int = 0
 
-  lazy val intMultiplication: Monoid[Int] = ???
+  lazy val intMultiplication: Monoid[Int] = new:
+    def combine(a1: Int, a2: Int): Int = a1 * a2
+    val empty: Int = 1
 
-  lazy val booleanOr: Monoid[Boolean] = ???
+  lazy val booleanOr: Monoid[Boolean] = new:
+    def combine(a1: Boolean, a2: Boolean): Boolean = a1 || a2
+    val empty: Boolean = false
 
-  lazy val booleanAnd: Monoid[Boolean] = ???
+  lazy val booleanAnd: Monoid[Boolean] = new:
+    def combine(a1: Boolean, a2: Boolean): Boolean = a1 && a2
+    val empty: Boolean = true
 
-  def optionMonoid[A]: Monoid[Option[A]] = ???
+  def optionMonoid[A]: Monoid[Option[A]] = new:
+    def combine(a1: Option[A], a2: Option[A]): Option[A] = a1.orElse(a2)
+    val empty: Option[A] = None
 
   def dual[A](m: Monoid[A]): Monoid[A] = new:
     def combine(x: A, y: A): A = m.combine(y, x)
     val empty = m.empty
 
-  def endoMonoid[A]: Monoid[A => A] = ???
+  def endoMonoid[A]: Monoid[A => A] = new:
+    def combine(a1: A => A, a2: A => A): A => A = a => a1.andThen(a2)(a)
+    def empty: A => A = identity
 
   import fpinscala.exercises.testing.{Gen, Prop}
   // import Gen.`**`
 
-  def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop = ???
+  def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop =
+    val id = Prop.forAll(gen)(a => m.combine(a, m.empty) == a && m.combine(m.empty, a) == a).tag("identity")
+    val associativity = Prop
+      .forAll(gen ** gen ** gen):
+        case ((a, b), c) =>
+          m.combine(m.combine(a, b), c) == m.combine(a, m.combine(b, c))
+      .tag("associativity")
+
+    id && associativity
 
   def combineAll[A](as: List[A], m: Monoid[A]): A =
     ???
