@@ -41,7 +41,7 @@ object Monoid:
     val empty = m.empty
 
   def endoMonoid[A]: Monoid[A => A] = new:
-    def combine(a1: A => A, a2: A => A): A => A = a => a1.andThen(a2)(a)
+    def combine(a1: A => A, a2: A => A): A => A = a1.compose(a2)
     def empty: A => A = identity
 
   import fpinscala.exercises.testing.{Gen, Prop}
@@ -58,16 +58,16 @@ object Monoid:
     id && associativity
 
   def combineAll[A](as: List[A], m: Monoid[A]): A =
-    ???
+    as.foldLeft(m.empty)(m.combine)
 
   def foldMap[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
-    ???
+    as.foldLeft(m.empty)((b, a) => m.combine(b, f(a)))
 
   def foldRight[A, B](as: List[A])(acc: B)(f: (A, B) => B): B =
-    ???
+    foldMap(as, endoMonoid[B])(f.curried)(acc)
 
   def foldLeft[A, B](as: List[A])(acc: B)(f: (B, A) => B): B =
-    ???
+    foldMap(as, dual(endoMonoid[B]))(a => b => f(b, a))(acc)
 
   def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
     ???
