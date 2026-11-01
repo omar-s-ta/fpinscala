@@ -32,6 +32,18 @@ object Monoid:
     def combine(a1: Boolean, a2: Boolean): Boolean = a1 && a2
     val empty: Boolean = true
 
+  case class MaybeSorted(sorted: Boolean, min: Int, max: Int)
+
+  lazy val isSorted: Monoid[Option[MaybeSorted]] = new:
+    val empty: Option[MaybeSorted] = None
+    def combine(a1: Option[MaybeSorted], a2: Option[MaybeSorted]): Option[MaybeSorted] =
+      (a1, a2) match
+        case (Some(a), Some(b)) =>
+          Some(MaybeSorted(a.sorted && b.sorted && a.max <= b.min, a.min, b.max))
+        case (a, None) => a
+        case (None, b) => b
+        case _ => None
+
   def optionMonoid[A]: Monoid[Option[A]] = new:
     def combine(a1: Option[A], a2: Option[A]): Option[A] = a1.orElse(a2)
     val empty: Option[A] = None
@@ -70,16 +82,21 @@ object Monoid:
     foldMap(as, dual(endoMonoid[B]))(a => b => f(b, a))(acc)
 
   def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
-    ???
+    if as.length <= 1 then as.headOption.map(f).getOrElse(m.empty)
+    else
+      val (l, r) = as.splitAt(as.length / 2)
+      m.combine(foldMapV(l, m)(f), foldMapV(r, m)(f))
 
-  def par[A](m: Monoid[A]): Monoid[Par[A]] =
-    ???
+  def par[A](m: Monoid[A]): Monoid[Par[A]] = new:
+    def empty: Par[A] = Par.unit(m.empty)
+    def combine(a1: Par[A], a2: Par[A]): Par[A] =
+      a1.map2(a2)(m.combine)
 
   def parFoldMap[A, B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] =
-    ???
+    Par.parMap(v)(f).flatMap(bs => foldMapV(bs, par(m))(Par.lazyUnit))
 
   def ordered(ints: IndexedSeq[Int]): Boolean =
-    ???
+    foldMapV(ints, isSorted)(i => Some(MaybeSorted(true, i, i))).map(_.sorted).getOrElse(true)
 
   enum WC:
     case Stub(chars: String)
