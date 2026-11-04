@@ -124,22 +124,25 @@ object Monoid:
       case Part(lStub, words, rStub) => unstub(lStub) + words + unstub(rStub)
 
   given productMonoid[A, B](using ma: Monoid[A], mb: Monoid[B]): Monoid[(A, B)] with
-    def combine(x: (A, B), y: (A, B)) = ???
-    val empty = ???
+    def combine(x: (A, B), y: (A, B)) = (ma.combine(x(0), y(0)), mb.combine(x(1), y(1)))
+    val empty = (ma.empty, mb.empty)
 
   given functionMonoid[A, B](using mb: Monoid[B]): Monoid[A => B] with
-    def combine(f: A => B, g: A => B) = ???
-    val empty: A => B = a => ???
+    def combine(f: A => B, g: A => B): A => B = a => mb.combine(f(a), g(a))
+    val empty: A => B = a => mb.empty
+
+  given Monoid[Int] with
+    def combine(a1: Int, a2: Int): Int = a1 + a2
+    def empty: Int = 0
 
   given mapMergeMonoid[K, V](using mv: Monoid[V]): Monoid[Map[K, V]] with
-    def combine(a: Map[K, V], b: Map[K, V]) = ???
-    val empty = ???
+    def combine(a: Map[K, V], b: Map[K, V]): Map[K, V] =
+      (a.keySet ++ b.keySet).foldLeft(empty): (map, key) =>
+        map.updated(key, mv.combine(a.getOrElse(key, mv.empty), b.getOrElse(key, mv.empty)))
+    val empty: Map[K, V] = Map()
 
   def bag[A](as: IndexedSeq[A]): Map[A, Int] =
-    ???
+    import Foldable.given
+    as.foldMap(a => Map(a -> 1))
 
 end Monoid
-
-@main def main =
-  val x = "omar saber talaat "
-  println(x.split(" ").mkString(","))
