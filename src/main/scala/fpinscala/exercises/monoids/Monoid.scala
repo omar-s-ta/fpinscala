@@ -1,6 +1,7 @@
 package fpinscala.exercises.monoids
 
 import fpinscala.exercises.parallelism.Nonblocking.*
+import fpinscala.exercises.monoids.Monoid.WC.*
 
 trait Monoid[A]:
   def combine(a1: A, a2: A): A
@@ -8,7 +9,7 @@ trait Monoid[A]:
 
 object Monoid:
 
-  val stringMonoid: Monoid[String] = new:
+  lazy val stringMonoid: Monoid[String] = new:
     def combine(a1: String, a2: String) = a1 + a2
     val empty = ""
 
@@ -102,9 +103,25 @@ object Monoid:
     case Stub(chars: String)
     case Part(lStub: String, words: Int, rStub: String)
 
-  lazy val wcMonoid: Monoid[WC] = ???
+  lazy val wcMonoid: Monoid[WC] = new:
+    def empty: WC = WC.Stub("")
+    def combine(a1: WC, a2: WC): WC =
+      (a1, a2) match
+        case (Stub(st1), Stub(st2)) => Stub(st1 ++ st2)
+        case (Stub(st), Part(lSt, words, rSt)) => Part(st ++ lSt, words, rSt)
+        case (Part(lSt, words, rSt), Stub(st)) => Part(lSt, words, rSt ++ st)
+        case (Part(lSta, wordsA, rSta), Part(lStb, wordsB, rStb)) =>
+          val count = if (rSta + lStb).isEmpty then 0 else 1
+          Part(lSta, wordsA + wordsB + count, rStb)
 
-  def count(s: String): Int = ???
+  def count(s: String): Int =
+    def count(c: Char): WC =
+      if c.isWhitespace then Part("", 0, "") else Stub(c.toString)
+    def unstub(s: String): Int =
+      if s.isEmpty then 0 else 1
+    foldMapV(s.toIndexedSeq, wcMonoid)(count) match
+      case Stub(chars) => unstub(chars)
+      case Part(lStub, words, rStub) => unstub(lStub) + words + unstub(rStub)
 
   given productMonoid[A, B](using ma: Monoid[A], mb: Monoid[B]): Monoid[(A, B)] with
     def combine(x: (A, B), y: (A, B)) = ???
@@ -122,3 +139,7 @@ object Monoid:
     ???
 
 end Monoid
+
+@main def main =
+  val x = "omar saber talaat "
+  println(x.split(" ").mkString(","))
