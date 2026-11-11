@@ -95,7 +95,8 @@ object Applicative:
 
   given monoidApplicative[M](using m: Monoid[M]): Applicative[Const[M, _]] with
     def unit[A](a: => A): M = m.empty
-    override def apply[A, B](m1: M)(m2: M): M = m.combine(m1, m2)
+    override def apply[A, B](m1: Const[M, A => B])(m2: Const[M, A]): Const[M, B] = m.combine(m1, m2)
+    // override def apply[A, B](m1: M)(m2: M): M = m.combine(m1, m2)
 
   given optionMonad: Monad[Option] with
     def unit[A](a: => A): Option[A] = Some(a)
