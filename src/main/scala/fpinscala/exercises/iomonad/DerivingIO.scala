@@ -2,6 +2,7 @@ package fpinscala.exercises.iomonad
 
 import scala.io.StdIn.readLine
 import scala.util.Try
+import fpinscala.exercises.iomonad.IO3.Free.freeMonad
 
 object IO0:
   /*
@@ -61,9 +62,9 @@ object IO1:
     self =>
     def unsafeRun: A
     def map[B](f: A => B): IO[B] = new:
-      def unsafeRun = f(self.unsafeRun)
+      def unsafeRun: B = f(self.unsafeRun)
     def flatMap[B](f: A => IO[B]): IO[B] = new:
-      def unsafeRun = f(self.unsafeRun).unsafeRun
+      def unsafeRun: B = f(self.unsafeRun).unsafeRun
 
   object IO:
     def apply[A](a: => A): IO[A] = new: // syntax for IO { .. }
@@ -203,7 +204,8 @@ object IO2a:
       extension [A](fa: IO[A]) def flatMap[B](f: A => IO[B]): IO[B] = fa.flatMap(f)
 
   def printLine(s: String): IO[Unit] =
-    IO.Suspend(() => println(s))
+    IO(println(s))
+  // IO.Suspend(() => println(s))
 
   import IO.monad.*
 
@@ -389,7 +391,12 @@ object IO3:
       flatMap(a => Return(f(a)))
 
     // Exercise 3: Implement a `Free` interpreter which works for any `Monad`
-    def run(using F: Monad[F]): F[A] = ???
+    def run(using F: Monad[F]): F[A] =
+      step match
+        case Return(a) => F.unit(a)
+        case Suspend(s) => s
+        case FlatMap(Suspend(s), f) => s.flatMap(a => f(a).run)
+        case FlatMap(_, _) => sys.error("Impossible, since `step` eliminates these cases")
 
     // return either a `Suspend`, a `Return`, or a right-associated `FlatMap`
     @annotation.tailrec
@@ -407,7 +414,7 @@ object IO3:
 
     // Exercise 4: Implement translate using runFree
     def translate[G[_]](fToG: [x] => F[x] => G[x]): Free[G, A] =
-      ???
+      runFree([x] => (f: F[x]) => Suspend(fToG(f)))
 
   import Free.{FlatMap, Return, Suspend}
 
@@ -415,11 +422,20 @@ object IO3:
 
     // Exercise 1: Implement a free monad for any type constructor F
     given freeMonad[F[_]]: Monad[[x] =>> Free[F, x]] with
-      def unit[A](a: => A) = ???
-      extension [A](fa: Free[F, A]) def flatMap[B](f: A => Free[F, B]) = ???
+      def unit[A](a: => A): Free[F, A] = Return(a)
+      extension [A](fa: Free[F, A]) def flatMap[B](f: A => Free[F, B]): Free[F, B] = fa.flatMap(f)
 
     // Exercise 2: Implement runTrampoline
-    extension [A](fa: Free[Function0, A]) def runTrampoline: A = ???
+    extension [A](fa: Free[Function0, A])
+      def runTrampoline: A =
+        fa match
+          case Return(a) => a
+          case Suspend(s) => s()
+          case FlatMap(x, f) =>
+            x match
+              case Return(a) => f(a).runTrampoline
+              case Suspend(s) => f(s()).runTrampoline
+              case FlatMap(s, g) => s.flatMap(a => g(a).flatMap(f)).runTrampoline
 
   /*
   The type constructor `F` lets us control the set of external requests our
@@ -457,6 +473,25 @@ object IO3:
       case PrintLine(line) =>
         ConsoleReader(s => ())
 
+    import scala.util.control.TailCalls.*
+
+    def toSReader: SConsoleReader[A] =
+      this match
+        case ReadLine =>
+          SConsoleReader(in => done(Some(in)))
+        case PrintLine(_) =>
+          SConsoleReader(s => done(()))
+
+    def toSState: SConsoleState[A] =
+      this match
+        case ReadLine =>
+          SConsoleState: bufs =>
+            bufs.in match
+              case head :: next => done(Some(head) -> bufs.copy(in = next))
+              case Nil => done(None -> bufs)
+        case PrintLine(line) =>
+          SConsoleState(bufs => done(() -> bufs.copy(out = bufs.out :+ line)))
+
   object Console:
     def readLn: Free[Console, Option[String]] =
       Suspend(ReadLine)
@@ -488,7 +523,7 @@ object IO3:
   // Exercise 4: Implement unsafeRunConsole
   extension [A](fa: Free[Console, A])
     def unsafeRunConsole: A =
-      ???
+      fa.translate([x] => (c: Console[x]) => c.toThunk).runTrampoline
 
   /*
   There is nothing about `Free[Console, A]` that requires we interpret
@@ -503,10 +538,23 @@ object IO3:
     def flatMap[B](f: A => ConsoleReader[B]): ConsoleReader[B] =
       ConsoleReader(r => f(run(r)).run(r))
 
+  import scala.util.control.TailCalls.*
+
+  case class SConsoleReader[A](run: String => TailRec[A]):
+    def map[B](f: A => B): SConsoleReader[B] =
+      SConsoleReader(r => run(r).map(f))
+    def flatMap[B](f: A => SConsoleReader[B]): SConsoleReader[B] =
+      SConsoleReader(r => run(r).flatMap(a => f(a).run(r)))
+
   object ConsoleReader:
     given monad: Monad[ConsoleReader] with
       def unit[A](a: => A) = ConsoleReader(_ => a)
       extension [A](fa: ConsoleReader[A]) def flatMap[B](f: A => ConsoleReader[B]) = fa.flatMap(f)
+
+  object SConsoleReader:
+    given monad: Monad[SConsoleReader] with
+      def unit[A](a: => A): SConsoleReader[A] = SConsoleReader(_ => tailcall(done(a)))
+      extension [A](fa: SConsoleReader[A]) def flatMap[B](f: A => SConsoleReader[B]) = fa.flatMap(f)
 
   case class Buffers(in: List[String], out: Vector[String])
 
@@ -521,15 +569,34 @@ object IO3:
         val (a, s1) = run(s)
         f(a).run(s1)
 
+  case class SConsoleState[A](run: Buffers => TailRec[(A, Buffers)]):
+    def map[B](f: A => B): SConsoleState[B] =
+      SConsoleState: bufs =>
+        run(bufs).map((a, bufs1) => (f(a), bufs1))
+    def flatMap[B](f: A => SConsoleState[B]): SConsoleState[B] =
+      SConsoleState: bufs =>
+        run(bufs).flatMap((a, bufs1) => f(a).run(bufs1))
+
   object ConsoleState:
     given monad: Monad[ConsoleState] with
       def unit[A](a: => A) = ConsoleState(bufs => (a, bufs))
       extension [A](fa: ConsoleState[A]) def flatMap[B](f: A => ConsoleState[B]) = fa.flatMap(f)
 
+  object SConsoleState:
+    given monad: Monad[SConsoleState] with
+      def unit[A](a: => A) = SConsoleState(bufs => tailcall(done(a -> bufs)))
+      extension [A](fa: SConsoleState[A]) def flatMap[B](f: A => SConsoleState[B]) = fa.flatMap(f)
+
   /* Can interpet these as before to convert our `Free[Console, A]` to a pure value that does no I/O! */
   extension [A](fa: Free[Console, A])
     def toReader: ConsoleReader[A] =
       fa.runFree([x] => (c: Console[x]) => c.toReader)
+
+    def toSReader: SConsoleReader[A] =
+      fa.runFree([x] => (c: Console[x]) => c.toSReader)
+
+    def toSState: SConsoleState[A] =
+      fa.runFree([x] => (c: Console[x]) => c.toSState)
 
     def toState: ConsoleState[A] =
       fa.runFree([x] => (c: Console[x]) => c.toState)
@@ -717,3 +784,6 @@ object IO5:
   def runCatThunk(): Unit = cat[Function0]("file")()
 
 end IO5
+
+@main def main =
+  IO3.Console.printLn("Hello").forever.unsafeRunConsole
