@@ -3,6 +3,7 @@ package fpinscala.exercises.iomonad
 import scala.io.StdIn.readLine
 import scala.util.Try
 import fpinscala.exercises.iomonad.IO3.Free.freeMonad
+import fpinscala.exercises.laziness.LazyList.from
 
 object IO0:
   /*
@@ -621,7 +622,23 @@ object IO3:
 
   def read(file: AsynchronousFileChannel, fromPosition: Long, numBytes: Int)
     : Free[Par, Either[Throwable, Array[Byte]]] =
-    ???
+    Suspend(
+      Par.async: (cb: Either[Throwable, Array[Byte]] => Unit) =>
+        val buf = ByteBuffer.allocate(numBytes)
+        file.read(
+          buf,
+          fromPosition,
+          (),
+          new CompletionHandler[Integer, Unit]:
+            def completed(bytesRead: Integer, attachment: Unit): Unit =
+              val dst = new Array[Byte](bytesRead)
+              buf.slice().get(dst, 0, bytesRead)
+              cb(Right(dst))
+
+            def failed(exc: Throwable, attachment: Unit): Unit =
+              cb(Left(exc))
+        )
+    )
 
 end IO3
 
