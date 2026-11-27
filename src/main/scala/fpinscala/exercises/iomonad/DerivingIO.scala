@@ -660,27 +660,29 @@ object IO4:
     def union[G[_]]: Free[[x] =>> F[x] | G[x], A] = this
     def covary[F2[x] >: F[x]]: Free[F2, A] = this
 
-    def run[F2[x] >: F[x]](using F: Monad[F2]): F2[A] = step match
-      case Return(a) => F.unit(a)
-      case Suspend(fa) => fa
-      case FlatMap(Suspend(fa), f) => fa.flatMap(a => f(a).run)
-      case FlatMap(_, _) => sys.error("Impossible, since `step` eliminates these cases")
+    def run[F2[x] >: F[x]](using F: Monad[F2]): F2[A] =
+      step match
+        case Return(a) => F.unit(a)
+        case Suspend(s) => s
+        case FlatMap(Suspend(s), f) => s.flatMap(a => f(a).run)
+        case FlatMap(_, _) => sys.error("`step` eliminates these cases")
 
     @annotation.tailrec
-    final def step: Free[F, A] = this match
-      case FlatMap(FlatMap(fx, f), g) => fx.flatMap(x => f(x).flatMap(y => g(y).covary[F])).step
-      case FlatMap(Return(x), f) => f(x).step
-      case _ => this
+    final def step: Free[F, A] =
+      this match
+        case FlatMap(FlatMap(a, f0), f1) => a.flatMap(a => f0(a).flatMap(a1 => f1(a1))).step
+        case FlatMap(Return(a), f) => f(a).step
+        case _ => this
 
     def runFree[G[_]](t: [x] => F[x] => G[x])(using G: Monad[G]): G[A] =
       step match
         case Return(a) => G.unit(a)
-        case Suspend(r) => t(r)
-        case FlatMap(Suspend(r), f) => t(r).flatMap[A](a => f(a).covary[F].runFree[G](t))
-        case FlatMap(_, _) => sys.error("Impossible, since `step` eliminates these cases")
+        case Suspend(fa) => t(fa)
+        case FlatMap(Suspend(fa), f) => t(fa).flatMap(a => f(a).covary[F].runFree(t))
+        case FlatMap(_, _) => sys.error("`step` eliminates these cases")
 
     def translate[G[_]](fToG: [x] => F[x] => G[x]): Free[G, A] =
-      runFree([x] => (fx: F[x]) => Suspend(fToG(fx)))
+      runFree([x] => (f: F[x]) => Suspend(fToG(f)))
 
   object Free:
     given freeMonad[F[_]]: Monad[[x] =>> Free[F, x]] with
